@@ -175,16 +175,28 @@ func ParseMPPSessions(s string) int {
 	return n
 }
 
-var rgaLoadRE = regexp.MustCompile(`scheduler\[(\d+)\]:\s*(\S+)\s+load\s*=\s*(\d+)%`)
+var (
+	rgaSchedulerRE = regexp.MustCompile(`scheduler\[(\d+)\]:\s*([^\s,]+)`)
+	rgaLoadRE      = regexp.MustCompile(`load\s*=\s*(\d+)%`)
+)
 
 // ParseRGALoad parses /sys/kernel/debug/rkrga/load (root only).
 // Disambiguates duplicate scheduler names (e.g. two "rga3") via the index.
 func ParseRGALoad(s string) []RGACore {
 	var out []RGACore
 	seen := map[string]int{}
-	for _, m := range rgaLoadRE.FindAllStringSubmatch(s, -1) {
-		base := m[2]
-		v, _ := strconv.Atoi(m[3])
+	headers := rgaSchedulerRE.FindAllStringSubmatchIndex(s, -1)
+	for i, header := range headers {
+		blockEnd := len(s)
+		if i+1 < len(headers) {
+			blockEnd = headers[i+1][0]
+		}
+		load := rgaLoadRE.FindStringSubmatch(s[header[1]:blockEnd])
+		if load == nil {
+			continue
+		}
+		base := s[header[4]:header[5]]
+		v, _ := strconv.Atoi(load[1])
 		name := base
 		if seen[base] > 0 {
 			name = base + "_" + strconv.Itoa(seen[base])

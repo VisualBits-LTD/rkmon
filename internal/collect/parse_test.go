@@ -63,6 +63,13 @@ func TestParseDevfreqLoad(t *testing.T) {
 	}
 }
 
+func TestParsePanthorDevfreqLoad(t *testing.T) {
+	pct, hz := ParseDevfreqLoad("9@200000000Hz\n")
+	if pct != 9 || hz != 200000000 {
+		t.Fatalf("want 9,200000000 got %d,%d", pct, hz)
+	}
+}
+
 func TestParseRKNPULoad(t *testing.T) {
 	raw := "NPU load:  Core0:  0%, Core1: 12%, Core2: 47%,\n"
 	got := ParseRKNPULoad(raw)
@@ -117,6 +124,27 @@ scheduler[2]: rga2
 	}
 	if got[2].Name != "rga2" || got[2].LoadPct != 0 {
 		t.Fatalf("[2] wrong: %+v", got[2])
+	}
+}
+
+func TestParseRGALoadWithSchedulerMetadata(t *testing.T) {
+	raw := `num of scheduler = 3
+scheduler[0]: rga3_core0, queue = 0
+	 load = 9%
+scheduler[1]: rga3_core1, queue = 0
+	 load = 27%
+scheduler[2]: rga2, queue = 0
+	 load = 4%
+`
+	got := ParseRGALoad(raw)
+	if len(got) != 3 {
+		t.Fatalf("want 3 entries, got %d: %+v", len(got), got)
+	}
+	want := []RGACore{{Name: "rga3_core0", LoadPct: 9}, {Name: "rga3_core1", LoadPct: 27}, {Name: "rga2", LoadPct: 4}}
+	for i := range want {
+		if got[i] != want[i] {
+			t.Fatalf("[%d] want %+v, got %+v", i, want[i], got[i])
+		}
 	}
 }
 

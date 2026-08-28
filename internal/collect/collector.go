@@ -14,9 +14,10 @@ import (
 
 // Hardware paths on RK3588 BSP kernel.
 const (
-	GPUDevfreq = "/sys/class/devfreq/fb000000.gpu-mali"
-	NPUDevfreq = "/sys/class/devfreq/fdab0000.npu"
-	DDRDevfreq = "/sys/class/devfreq/dmc"
+	GPUDevfreq        = "/sys/class/devfreq/fb000000.gpu-mali"
+	GPUDevfreqPanthor = "/sys/class/devfreq/fb000000.gpu-panthor"
+	NPUDevfreq        = "/sys/class/devfreq/fdab0000.npu"
+	DDRDevfreq        = "/sys/class/devfreq/dmc"
 
 	RKNPULoad   = "/sys/kernel/debug/rknpu/load"
 	MPPLoad     = "/proc/mpp_service/load"
@@ -234,7 +235,11 @@ func (c *Collector) readMem(snap *Snapshot) {
 // --- Devfreq nodes ----------------------------------------------------------
 
 func (c *Collector) readDevfreqs(snap *Snapshot) {
-	snap.GPU = c.readDevfreq(GPUDevfreq, "Mali-G610", "gpu-thermal")
+	gpuDevfreq := firstExistingPath(GPUDevfreqPanthor, GPUDevfreq)
+	if gpuDevfreq == "" {
+		gpuDevfreq = GPUDevfreq
+	}
+	snap.GPU = c.readDevfreq(gpuDevfreq, "Mali-G610", "gpu-thermal")
 	snap.NPU = c.readDevfreq(NPUDevfreq, "NPU", "npu-thermal")
 	snap.DDR = c.readDevfreq(DDRDevfreq, "DDR", "")
 
@@ -256,9 +261,9 @@ func (c *Collector) readDevfreq(base, name, thermalZone string) Devfreq {
 	if raw, err := c.readFileBuf(filepath.Join(base, "load")); err == nil {
 		d.PctUsed, d.FreqHz = ParseDevfreqLoad(raw)
 	}
-	if d.FreqHz == 0 {
-		if raw, err := c.readFileBuf(filepath.Join(base, "cur_freq")); err == nil {
-			d.FreqHz, _ = strconv.ParseUint(strings.TrimSpace(raw), 10, 64)
+	if raw, err := c.readFileBuf(filepath.Join(base, "cur_freq")); err == nil {
+		if freqHz, parseErr := strconv.ParseUint(strings.TrimSpace(raw), 10, 64); parseErr == nil {
+			d.FreqHz = freqHz
 		}
 	}
 	limits, cached := c.cachedDevfreqLimits[base]
@@ -378,7 +383,8 @@ func (c *Collector) readVPU(snap *Snapshot, now time.Time) {
 }
 
 func (c *Collector) readRGA(snap *Snapshot) {
-	raw, err := c.readFileBuf(RGALoad)
+	// rkrga/load is a debugfs seq_file; reopen it so every tick regenerates data.
+	raw, err := readFile(RGALoad)
 	if err != nil {
 		return
 	}
@@ -769,6 +775,15 @@ func readFile(path string) (string, error) {
 		return "", err
 	}
 	return string(b), nil
+}
+
+func firstExistingPath(paths ...string) string {
+	for _, path := range paths {
+		if _, err := os.Stat(path); err == nil {
+			return path
+		}
+	}
+	return ""
 }
 
 func (c *Collector) readFileBuf(path string) (string, error) {

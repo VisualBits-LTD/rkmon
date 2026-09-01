@@ -208,7 +208,7 @@ func buildMainRows(s Styles, l Layout, snap *collect.Snapshot, refresh time.Dura
 		rows = append(rows, renderNPU(s, l, snap)...)
 	}
 	if sectionVisible(sections, SecVPU) {
-		rows = append(rows, renderDivider(s, l, "VPU (mpp_service)"))
+		rows = append(rows, renderDivider(s, l, "MPP Load"))
 		rows = append(rows, renderVPU(s, l, snap)...)
 	}
 	if sectionVisible(sections, SecRGA) {
@@ -587,8 +587,9 @@ func renderVPU(s Styles, l Layout, snap *collect.Snapshot) []string {
 			label := padVisible(s.label(e.Name), labelW)
 			bar := renderBar(s, e.LoadPct, l.BarW)
 			pct := pctText(s, int(e.LoadPct+0.5))
+			clock := formatClockMHz(s, e.ClockHz)
 			util := s.dim(fmt.Sprintf("util %.1f%%", e.UtilPct))
-			rows = append(rows, contentRow(s, l, fmt.Sprintf("%s%s %s  %s", label, bar, pct, util)))
+			rows = append(rows, contentRow(s, l, fmt.Sprintf("%s%s %s %s  %s", label, bar, pct, clock, util)))
 		}
 		return rows
 	}
@@ -639,9 +640,17 @@ func renderRGA(s Styles, l Layout, snap *collect.Snapshot) []string {
 		label := padVisible(s.label(c.Name), l.LabelW)
 		bar := renderBar(s, float64(c.LoadPct), l.BarW)
 		pct := pctText(s, c.LoadPct)
-		rows = append(rows, contentRow(s, l, fmt.Sprintf("%s%s %s", label, bar, pct)))
+		clock := formatClockMHz(s, c.ClockHz)
+		rows = append(rows, contentRow(s, l, fmt.Sprintf("%s%s %s %s", label, bar, pct, clock)))
 	}
 	return rows
+}
+
+func formatClockMHz(s Styles, hz uint64) string {
+	if hz == 0 {
+		return ""
+	}
+	return s.label(fmt.Sprintf("%4d MHz", hz/1_000_000))
 }
 
 func renderISP(s Styles, l Layout, snap *collect.Snapshot) string {

@@ -78,6 +78,7 @@ type VPUEngine struct {
 	LoadPct     float64 // -1 if unavailable
 	UtilPct     float64
 	TasksPerSec float64
+	ClockHz     uint64
 }
 
 type RGAInfo struct {
@@ -88,6 +89,7 @@ type RGAInfo struct {
 type RGACore struct {
 	Name    string // e.g. "rga3_core0", "rga2"
 	LoadPct int    // 0..100
+	ClockHz uint64
 }
 
 type ISPInfo struct {

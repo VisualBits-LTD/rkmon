@@ -23,6 +23,7 @@ type Model struct {
 	helpTab    int
 	helpScroll int
 	mainScroll int
+	configPath string
 }
 
 func NewModel(c *collect.Collector, refresh time.Duration, color bool) Model {
@@ -30,14 +31,20 @@ func NewModel(c *collect.Collector, refresh time.Duration, color bool) Model {
 }
 
 func NewModelWithTiers(c *collect.Collector, refresh time.Duration, color bool, tiers [3]int8) Model {
+	configPath := preferencesPath()
+	sections, savedTiers := loadDisplayPreferences(configPath, DefaultSections(), [3]int8{})
+	if tiers == ([3]int8{}) {
+		tiers = savedTiers
+	}
 	return Model{
-		collector: c,
-		styles:    NewStyles(!color),
-		refresh:   refresh,
-		width:     100,
-		height:    40,
-		tiers:     tiers,
-		sections:  DefaultSections(),
+		collector:  c,
+		styles:     NewStyles(!color),
+		refresh:    refresh,
+		width:      100,
+		height:     40,
+		tiers:      tiers,
+		sections:   sections,
+		configPath: configPath,
 	}
 }
 
@@ -133,38 +140,47 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "1", "i", "I":
 			m.tiers[0] = toggleTier(m.tiers[0], m.height, 0)
 			m.mainScroll = 0
+			m.saveDisplayPreferences()
 			return m, nil
 		case "2", "s", "S":
 			m.tiers[1] = toggleTier(m.tiers[1], m.height, 1)
 			m.mainScroll = 0
+			m.saveDisplayPreferences()
 			return m, nil
 		case "3", "k", "K":
 			m.tiers[2] = toggleTier(m.tiers[2], m.height, 2)
 			m.mainScroll = 0
+			m.saveDisplayPreferences()
 			return m, nil
 		case "c", "C":
 			m.sections = toggleSection(m.sections, SecCPU)
 			m.mainScroll = 0
+			m.saveDisplayPreferences()
 			return m, nil
 		case "m", "M":
 			m.sections = toggleSection(m.sections, SecMEM)
 			m.mainScroll = 0
+			m.saveDisplayPreferences()
 			return m, nil
 		case "g", "G":
 			m.sections = toggleSection(m.sections, SecGPU)
 			m.mainScroll = 0
+			m.saveDisplayPreferences()
 			return m, nil
 		case "n", "N":
 			m.sections = toggleSection(m.sections, SecNPU)
 			m.mainScroll = 0
+			m.saveDisplayPreferences()
 			return m, nil
 		case "v", "V":
 			m.sections = toggleSection(m.sections, SecVPU)
 			m.mainScroll = 0
+			m.saveDisplayPreferences()
 			return m, nil
 		case "a", "A":
 			m.sections = toggleSection(m.sections, SecRGA)
 			m.mainScroll = 0
+			m.saveDisplayPreferences()
 			return m, nil
 		case "up":
 			m.mainScroll = m.clampMainScroll(m.mainScroll - 1)
@@ -194,6 +210,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, tickAndCollectCmd(m.collector, m.refresh)
 	}
 	return m, nil
+}
+
+func (m Model) saveDisplayPreferences() {
+	_ = saveDisplayPreferences(m.configPath, m.sections, m.tiers)
 }
 
 func (m Model) clampMainScroll(v int) int {

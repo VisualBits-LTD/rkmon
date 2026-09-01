@@ -16,6 +16,7 @@ import (
 const (
 	GPUDevfreq        = "/sys/class/devfreq/fb000000.gpu-mali"
 	GPUDevfreqPanthor = "/sys/class/devfreq/fb000000.gpu-panthor"
+	GPUDevfreqG29     = "/sys/class/devfreq/fb000000.gpu"
 	NPUDevfreq        = "/sys/class/devfreq/fdab0000.npu"
 	DDRDevfreq        = "/sys/class/devfreq/dmc"
 
@@ -235,7 +236,7 @@ func (c *Collector) readMem(snap *Snapshot) {
 // --- Devfreq nodes ----------------------------------------------------------
 
 func (c *Collector) readDevfreqs(snap *Snapshot) {
-	gpuDevfreq := firstExistingPath(GPUDevfreqPanthor, GPUDevfreq)
+	gpuDevfreq := firstUsableDevfreqPath(GPUDevfreqPanthor, GPUDevfreq, GPUDevfreqG29)
 	if gpuDevfreq == "" {
 		gpuDevfreq = GPUDevfreq
 	}
@@ -777,9 +778,16 @@ func readFile(path string) (string, error) {
 	return string(b), nil
 }
 
-func firstExistingPath(paths ...string) string {
+func firstUsableDevfreqPath(paths ...string) string {
 	for _, path := range paths {
-		if _, err := os.Stat(path); err == nil {
+		load, err := os.Open(filepath.Join(path, "load"))
+		if err != nil {
+			continue
+		}
+		_ = load.Close()
+		curFreq, err := os.Open(filepath.Join(path, "cur_freq"))
+		if err == nil {
+			_ = curFreq.Close()
 			return path
 		}
 	}

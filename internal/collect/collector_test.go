@@ -6,24 +6,48 @@ import (
 	"testing"
 )
 
-func TestFirstExistingPath(t *testing.T) {
+func TestFirstUsableDevfreqPath(t *testing.T) {
 	root := t.TempDir()
 	panthor := filepath.Join(root, "fb000000.gpu-panthor")
 	mali := filepath.Join(root, "fb000000.gpu-mali")
-	for _, path := range []string{panthor, mali} {
+	g29 := filepath.Join(root, "fb000000.gpu")
+	for _, path := range []string{panthor, mali, g29} {
 		if err := os.Mkdir(path, 0o755); err != nil {
 			t.Fatal(err)
 		}
 	}
+	writeDevfreqFiles := func(path string) {
+		t.Helper()
+		for name, content := range map[string]string{"load": "9@200000000Hz\n", "cur_freq": "200000000\n"} {
+			if err := os.WriteFile(filepath.Join(path, name), []byte(content), 0o644); err != nil {
+				t.Fatal(err)
+			}
+		}
+	}
+	writeDevfreqFiles(panthor)
+	writeDevfreqFiles(mali)
+	writeDevfreqFiles(g29)
 
-	if got := firstExistingPath(panthor, mali); got != panthor {
+	if got := firstUsableDevfreqPath(panthor, mali, g29); got != panthor {
 		t.Fatalf("want preferred path %q, got %q", panthor, got)
 	}
-	if err := os.Remove(panthor); err != nil {
+	if err := os.Remove(filepath.Join(panthor, "cur_freq")); err != nil {
 		t.Fatal(err)
 	}
-	if got := firstExistingPath(panthor, mali); got != mali {
+	if got := firstUsableDevfreqPath(panthor, mali, g29); got != mali {
 		t.Fatalf("want fallback path %q, got %q", mali, got)
+	}
+	if err := os.RemoveAll(mali); err != nil {
+		t.Fatal(err)
+	}
+	if got := firstUsableDevfreqPath(panthor, mali, g29); got != g29 {
+		t.Fatalf("want g29 path %q, got %q", g29, got)
+	}
+	if err := os.Remove(filepath.Join(g29, "load")); err != nil {
+		t.Fatal(err)
+	}
+	if got := firstUsableDevfreqPath(panthor, mali, g29); got != "" {
+		t.Fatalf("want no usable path, got %q", got)
 	}
 }
 

@@ -40,8 +40,7 @@ func TestModelPersistsVisibilityChanges(t *testing.T) {
 
 	updated, _ := model.Update(keyPress('c'))
 	model = updated.(Model)
-	updated, _ = model.Update(keyPress('i'))
-	model = updated.(Model)
+	_, _ = model.Update(keyPress('i'))
 
 	reloaded := NewModel(nil, time.Second, false)
 	if reloaded.sections[SecCPU] {

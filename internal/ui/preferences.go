@@ -8,8 +8,10 @@ import (
 
 const preferencesVersion = 1
 
-var sectionPreferenceNames = [SecCount]string{"cpu", "memory", "gpu", "npu", "mpp", "rga"}
-var tierPreferenceNames = [3]string{"io", "system", "kernel"}
+var (
+	sectionPreferenceNames = [SecCount]string{"cpu", "memory", "gpu", "npu", "mpp", "rga"}
+	tierPreferenceNames    = [3]string{"io", "system", "kernel"}
+)
 
 type displayPreferences struct {
 	Version  int             `json:"version"`
@@ -70,15 +72,15 @@ func saveDisplayPreferences(path string, sections [SecCount]bool, tiers [3]int8)
 		return err
 	}
 	raw = append(raw, '\n')
-	if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
-		return err
+	if mkdirErr := os.MkdirAll(filepath.Dir(path), 0o700); mkdirErr != nil {
+		return mkdirErr
 	}
 	temporary, err := os.CreateTemp(filepath.Dir(path), ".config-*")
 	if err != nil {
 		return err
 	}
 	temporaryPath := temporary.Name()
-	defer os.Remove(temporaryPath)
+	defer func() { _ = os.Remove(temporaryPath) }()
 	if err := temporary.Chmod(0o600); err != nil {
 		_ = temporary.Close()
 		return err

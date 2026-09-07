@@ -44,3 +44,14 @@ func TestRenderMPPAndRGAClocks(t *testing.T) {
 		t.Errorf("render contains old MPP heading:\n%s", got)
 	}
 }
+
+func TestRenderShowsMaxPerformanceInStatusRow(t *testing.T) {
+	snapshot := &collect.Snapshot{
+		Host: collect.HostInfo{MaxPerformance: true},
+	}
+
+	got := Render(NewStyles(true), snapshot, time.Second, 1, 100, 0, [3]int8{}, DefaultSections(), 0)
+	if !strings.Contains(got, "PERF MAX") {
+		t.Fatalf("active max-performance state missing from status row:\n%s", got)
+	}
+}

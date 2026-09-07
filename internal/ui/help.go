@@ -39,6 +39,7 @@ Tier toggles  (binary on/off, shown after core sections on screen)
 
 Controls
   q / ctrl+c     Quit
+	  p              Toggle max-performance governors (sudo; restored on exit)
   + / =          Refresh rate -100ms (faster)
   - / _          Refresh rate +100ms (slower)
   r              Force redraw / re-collect

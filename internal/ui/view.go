@@ -128,7 +128,8 @@ func Render(s Styles, snap *collect.Snapshot, refresh time.Duration, tick, width
 		rows = append(rows, visible...)
 		rows = append(rows, bottom)
 	}
-	rows = append(rows, renderFooter(s, l, tiers, sections, height))
+	maxPerformance := snap != nil && snap.Host.MaxPerformance
+	rows = append(rows, renderFooter(s, l, tiers, sections, height, maxPerformance))
 
 	return strings.Join(rows, "\n")
 }
@@ -401,6 +402,9 @@ func renderStatusRow(s Styles, l Layout, snap *collect.Snapshot, refresh time.Du
 	left := fmt.Sprintf("%s %s  %s %s",
 		s.label("Load"), s.value(loadStr),
 		s.label("Tasks"), s.value(tasks))
+	if snap.Host.MaxPerformance {
+		left += "  " + s.title("PERF MAX")
+	}
 	right := fmt.Sprintf("%s %s  %s %d",
 		s.label("refresh"), s.value(refresh.String()),
 		s.label("tick"), tick)
@@ -998,7 +1002,7 @@ func thermalShort(k string) string {
 
 // --- Footer (outside the box) ----------------------------------------------
 
-func renderFooter(s Styles, l Layout, tiers [3]int8, sections [SecCount]bool, height int) string {
+func renderFooter(s Styles, l Layout, tiers [3]int8, sections [SecCount]bool, height int, maxPerformance bool) string {
 	secEntries := []struct {
 		key  string
 		name string
@@ -1028,7 +1032,11 @@ func renderFooter(s Styles, l Layout, tiers [3]int8, sections [SecCount]bool, he
 		now = time.Now().Format("15:04")
 	}
 	line1 := strings.Join(secParts, "  ") + "  " + tierMap + "  " + s.dim("· "+now)
-	line2 := s.hint("[q]quit  [+/-]refresh  [r]redraw  [?]help  [↑↓/pgup/pgdn/home/end]scroll")
+	performance := "off"
+	if maxPerformance {
+		performance = "on"
+	}
+	line2 := s.hint("[q]quit  [p]max-perf:" + performance + "  [+/-]refresh  [r]redraw  [?]help  [↑↓/pgup/pgdn/home/end]scroll")
 	if l.Width > 0 {
 		if lipgloss.Width(line1) > l.Width {
 			line1 = ansi.Truncate(line1, l.Width, "…")

@@ -28,13 +28,14 @@ type Snapshot struct {
 }
 
 type HostInfo struct {
-	Hostname     string
-	Kernel       string
-	Uptime       time.Duration
-	LoadAvg      [3]float64
-	ProcsRunning int
-	ProcsTotal   int
-	IsRoot       bool
+	Hostname       string
+	Kernel         string
+	Uptime         time.Duration
+	LoadAvg        [3]float64
+	ProcsRunning   int
+	ProcsTotal     int
+	IsRoot         bool
+	MaxPerformance bool
 }
 
 type CPUCore struct {

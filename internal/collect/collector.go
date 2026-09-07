@@ -51,7 +51,9 @@ var (
 )
 
 type Collector struct {
-	mu sync.Mutex
+	mu              sync.Mutex
+	performanceRoot string
+	savedGovernors  []governorSetting
 
 	prevCPU      map[string]CPUTimes
 	prevSnapshot *Snapshot
@@ -173,13 +175,14 @@ func (c *Collector) readHost(snap *Snapshot) {
 
 	avg, running, total := ParseLoadavg(loadRaw)
 	snap.Host = HostInfo{
-		Hostname:     hostname,
-		Kernel:       kernel,
-		Uptime:       time.Duration(ParseUptimeSeconds(uptimeRaw) * float64(time.Second)),
-		LoadAvg:      avg,
-		ProcsRunning: running,
-		ProcsTotal:   total,
-		IsRoot:       os.Geteuid() == 0,
+		Hostname:       hostname,
+		Kernel:         kernel,
+		Uptime:         time.Duration(ParseUptimeSeconds(uptimeRaw) * float64(time.Second)),
+		LoadAvg:        avg,
+		ProcsRunning:   running,
+		ProcsTotal:     total,
+		IsRoot:         os.Geteuid() == 0,
+		MaxPerformance: len(c.savedGovernors) > 0,
 	}
 }
 
@@ -873,6 +876,7 @@ func (c *Collector) readFileBuf(path string) (string, error) {
 func (c *Collector) Close() {
 	c.mu.Lock()
 	defer c.mu.Unlock()
+	_ = c.restoreGovernors()
 	for _, fd := range c.persistentFDs {
 		_ = unix.Close(fd)
 	}

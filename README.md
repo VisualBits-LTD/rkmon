@@ -83,6 +83,7 @@ sudo rkmon               # unlock NPU per-core, VPU load%, RGA load%
 | `r` | Force redraw |
 | `c` `m` `g` `n` `v` `a` | Toggle CPU / MEM / GPU / NPU / VPU / RGA panels |
 | `i` `s` `k` | Toggle I/O / System / Kernel tiers (also `1` `2` `3`) |
+| `p` | Toggle max-performance governors for CPU/GPU/NPU/DDR (requires root; restored on exit) |
 | `?` | Open multi-tab help (keybinds, metrics, stress tests) |
 | `↑` `↓` `j` | Scroll body one row |
 | `pgup` `pgdn` `space` | Scroll body one page |

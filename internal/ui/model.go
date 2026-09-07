@@ -9,21 +9,22 @@ import (
 )
 
 type Model struct {
-	collector  *collect.Collector
-	styles     Styles
-	refresh    time.Duration
-	snap       *collect.Snapshot
-	err        error
-	tick       int
-	width      int
-	height     int
-	tiers      [3]int8
-	sections   [SecCount]bool
-	helpMode   bool
-	helpTab    int
-	helpScroll int
-	mainScroll int
-	configPath string
+	collector            *collect.Collector
+	styles               Styles
+	refresh              time.Duration
+	snap                 *collect.Snapshot
+	err                  error
+	tick                 int
+	width                int
+	height               int
+	tiers                [3]int8
+	sections             [SecCount]bool
+	helpMode             bool
+	helpTab              int
+	helpScroll           int
+	mainScroll           int
+	configPath           string
+	toggleMaxPerformance func() (bool, error)
 }
 
 func NewModel(c *collect.Collector, refresh time.Duration, color bool) Model {
@@ -37,14 +38,15 @@ func NewModelWithTiers(c *collect.Collector, refresh time.Duration, color bool, 
 		tiers = savedTiers
 	}
 	return Model{
-		collector:  c,
-		styles:     NewStyles(!color),
-		refresh:    refresh,
-		width:      100,
-		height:     40,
-		tiers:      tiers,
-		sections:   sections,
-		configPath: configPath,
+		collector:            c,
+		styles:               NewStyles(!color),
+		refresh:              refresh,
+		width:                100,
+		height:               40,
+		tiers:                tiers,
+		sections:             sections,
+		configPath:           configPath,
+		toggleMaxPerformance: c.ToggleMaxPerformance,
 	}
 }
 
@@ -127,6 +129,13 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 		case "r":
 			return m, collectCmd(m.collector)
+		case "p", "P":
+			enabled, err := m.toggleMaxPerformance()
+			m.err = err
+			if err == nil && m.snap != nil {
+				m.snap.Host.MaxPerformance = enabled
+			}
+			return m, nil
 		case "+", "=":
 			if m.refresh > 200*time.Millisecond {
 				m.refresh -= 100 * time.Millisecond

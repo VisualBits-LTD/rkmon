@@ -15,18 +15,14 @@ env:
 
 jobs:
   test:
-    name: test (go ${{ matrix.go }})
+    name: test
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        go: ["1.26"]
     steps:
       - uses: actions/checkout@v7
 
       - uses: actions/setup-go@v7
         with:
-          go-version: ${{ matrix.go }}
+          go-version: "1.27"
           check-latest: true
 
       - name: go test (-race)
@@ -62,9 +58,9 @@ jobs:
 
       - uses: actions/setup-go@v7
         with:
-          go-version: "1.26"
+          go-version: "1.27"
           check-latest: true
 
       - uses: golangci/golangci-lint-action@v9
         with:
-          version: v2.12
+          version: v2.13.2

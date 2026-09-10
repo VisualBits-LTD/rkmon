@@ -80,7 +80,8 @@ Memory
   not capacity) from /sys/class/devfreq/dmc/load (N@FreqHz format).
 
 GPU (Mali-G610)
-  /sys/class/devfreq/fb000000.gpu-mali/load (utilization %).
+  Utilization from the first usable RK3588 GPU devfreq load node
+  (gpu-panthor, gpu-mali, or gpu).
   Freq + range from cur_freq / min_freq / max_freq.
 
 NPU (RKNPU)

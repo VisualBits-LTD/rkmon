@@ -14,11 +14,11 @@ import (
 
 // Hardware paths on RK3588 BSP kernel.
 const (
-	GPUDevfreq        = "/sys/class/devfreq/fb000000.gpu-mali"
-	GPUDevfreqPanthor = "/sys/class/devfreq/fb000000.gpu-panthor"
-	GPUDevfreqG29     = "/sys/class/devfreq/fb000000.gpu"
-	NPUDevfreq        = "/sys/class/devfreq/fdab0000.npu"
-	DDRDevfreq        = "/sys/class/devfreq/dmc"
+	gpuDevfreqVendorMali = "/sys/class/devfreq/fb000000.gpu-mali"
+	gpuDevfreqPanthor    = "/sys/class/devfreq/fb000000.gpu-panthor"
+	gpuDevfreqGeneric    = "/sys/class/devfreq/fb000000.gpu"
+	NPUDevfreq           = "/sys/class/devfreq/fdab0000.npu"
+	DDRDevfreq           = "/sys/class/devfreq/dmc"
 
 	RKNPULoad   = "/sys/kernel/debug/rknpu/load"
 	MPPLoad     = "/proc/mpp_service/load"
@@ -235,9 +235,9 @@ func (c *Collector) readMem(snap *Snapshot) {
 // --- Devfreq nodes ----------------------------------------------------------
 
 func (c *Collector) readDevfreqs(snap *Snapshot) {
-	gpuDevfreq := firstUsableDevfreqPath(GPUDevfreqPanthor, GPUDevfreq, GPUDevfreqG29)
+	gpuDevfreq := firstUsableDevfreqPath(gpuDevfreqPanthor, gpuDevfreqVendorMali, gpuDevfreqGeneric)
 	if gpuDevfreq == "" {
-		gpuDevfreq = GPUDevfreq
+		gpuDevfreq = gpuDevfreqVendorMali
 	}
 	snap.GPU = c.readDevfreq(gpuDevfreq, "Mali-G610", "gpu-thermal")
 	snap.NPU = c.readDevfreq(NPUDevfreq, "NPU", "npu-thermal")

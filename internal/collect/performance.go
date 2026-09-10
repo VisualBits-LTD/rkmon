@@ -54,11 +54,12 @@ func (c *Collector) ToggleMaxPerformance() (bool, error) {
 
 func performanceGovernorPaths(root string) []string {
 	patterns := []string{
-		filepath.Join(root, "/sys/devices/system/cpu/cpufreq/policy*/scaling_governor"),
-		filepath.Join(root, GPUDevfreqPanthor, "governor"),
-		filepath.Join(root, GPUDevfreq, "governor"),
-		filepath.Join(root, NPUDevfreq, "governor"),
-		filepath.Join(root, DDRDevfreq, "governor"),
+		rootPath(root, "/sys/devices/system/cpu/cpufreq/policy*/scaling_governor"),
+		rootPath(root, gpuDevfreqPanthor+"/governor"),
+		rootPath(root, gpuDevfreqVendorMali+"/governor"),
+		rootPath(root, gpuDevfreqGeneric+"/governor"),
+		rootPath(root, NPUDevfreq+"/governor"),
+		rootPath(root, DDRDevfreq+"/governor"),
 	}
 	var paths []string
 	for _, pattern := range patterns {
@@ -66,6 +67,13 @@ func performanceGovernorPaths(root string) []string {
 		paths = append(paths, matches...)
 	}
 	return paths
+}
+
+func rootPath(root, abs string) string {
+	if root == "" {
+		return abs
+	}
+	return filepath.Join(root, strings.TrimPrefix(abs, "/"))
 }
 
 func (c *Collector) restoreGovernors() error {

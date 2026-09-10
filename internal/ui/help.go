@@ -361,4 +361,4 @@ func helpContentRow(s Styles, width int, line string) string {
 
 func helpBottomBorder(s Styles, width int) string {
 	return s.border("└" + strings.Repeat("─", width-2) + "┘")
-} 
+}
